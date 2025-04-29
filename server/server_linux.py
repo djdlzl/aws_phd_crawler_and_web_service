@@ -3,9 +3,13 @@ import sqlite3
 import json
 from datetime import datetime
 import os
+import pytz
 import config
+from flask_cors import CORS
+
 
 app = Flask(__name__)
+CORS(app)
 DB_PATH = config.DB_PATH
 
 def init_db():
@@ -16,7 +20,8 @@ def init_db():
             client_id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL UNIQUE,
             account_id TEXT NOT NULL,
-            last_crawled TEXT
+            last_crawled TEXT,
+            owner TEXT
         )
     """)
     cursor.execute("""
@@ -75,7 +80,7 @@ def save_events():
 
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        current_time = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        current_time = datetime.now(pytz.timezone('Asia/Seoul')).strftime("%Y-%m-%d %H:%M:%S")
 
         for sheet_name, records in all_results:
             if not records:
@@ -192,7 +197,7 @@ def get_clients():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT c.client_id, c.name, c.account_id, c.last_crawled,
+            SELECT c.client_id, c.name, c.account_id, c.last_crawled, c.owner,
                    COALESCE((
                        SELECT json_group_array(
                            json_object(
@@ -224,7 +229,8 @@ def get_clients():
                 "name": row[1],
                 "account_id": row[2],
                 "last_crawled": row[3],
-                "events": json.loads(row[4])
+                "owner":     row[4],
+                "events": json.loads(row[5])
             }
             for row in cursor.fetchall()
         ]
@@ -232,6 +238,16 @@ def get_clients():
         return jsonify(clients)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/client/<int:client_id>/owner', methods=['PUT'])
+def update_owner(client_id):
+    new_owner = request.json.get('owner', '')
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE clients SET owner = ? WHERE client_id = ?", (new_owner, client_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": "담당자 업데이트 성공"}), 200
 
 if __name__ == "__main__":
     init_db()

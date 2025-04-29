@@ -10,7 +10,7 @@ CHROMEDRIVER_PATH = "chromedriver.exe"
 AWS_LOGIN_URL_TEMPLATE = "https://{account}.signin.aws.amazon.com/console"
 
 # Sheets
-SHEET_TITLE = ""
+SHEET_TITLE = "SRE1_자동화 고객사 목록"
 
 # Threading
 MAX_THREAD = 5
@@ -79,12 +79,12 @@ KEY_MAPPING = {
 ########## sheets_auth_selector.py ##########
 
 # Google Sheets
-GOOGLE_CREDENTIALS_FILE = ""
+GOOGLE_CREDENTIALS_FILE = "total-pad-452908-i9-262988efc1a1.json"
 GSHEET_SCOPE = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive"
 ]
-SHEET_RANGE = "A2:AC5"
+SHEET_RANGE = "A18:AC18"
 
 # Missing clients logger
 MISSING_CLIENTS_LOG_FILE = "missing_clients.log"

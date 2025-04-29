@@ -79,7 +79,7 @@ def save_events():
 
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        current_time = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        current_time = datetime.utcnow().astimezone(pytz.timezone('Asia/Seoul')).strftime("%Y-%m-%d %H:%M:%S")
 
         for sheet_name, records in all_results:
             if not records:

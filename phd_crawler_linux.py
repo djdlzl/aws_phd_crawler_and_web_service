@@ -285,19 +285,20 @@ def process_account(client):
             WebDriverWait(driver, config.EXPLICIT_WAIT).until(
                 EC.element_to_be_clickable((By.ID, "signin_button"))
             ).click()
-            print('id 비밀번호 제출 완료')
+            print(client['name'], ' id 비밀번호 제출 완료')
             time.sleep(config.SLEEP_LONG)
 
             # MFA
-            mfa = WebDriverWait(driver, config.EXPLICIT_WAIT).until(
-                EC.visibility_of_element_located((By.ID, "mfaCode"))
-            )
-            mfa.send_keys(pyotp.TOTP(client['mfaSecret']).now())
+            mfa_field = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.ID, "mfaCode")))
+            mfa_field.send_keys(pyotp.TOTP(client['mfaSecret']).now())
+            
+
             WebDriverWait(driver, config.EXPLICIT_WAIT).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='submit'], button.awsui-button"))
             ).click()
-            print('OTP 제출 완료')
 
+            print(client['name'],' OTP 제출 완료')
+            time.sleep(config.SLEEP_SHORT)
             WebDriverWait(driver, config.EXPLICIT_WAIT).until(
                 EC.any_of(
                     EC.url_contains("console.aws.amazon.com"),
@@ -305,14 +306,16 @@ def process_account(client):
                 )
             )
             time.sleep(config.SLEEP_LONG)
+            print(client['name'], ' AWS 화면 떴음')
 
             # 알람 페이지 이동
             WebDriverWait(driver, config.EXPLICIT_WAIT).until(
                 EC.element_to_be_clickable((By.XPATH, config.XPATHS['login']['alarm_button']))
             ).click()
             time.sleep(config.SLEEP_MEDIUM)
-            print('알람 페이지 이동 완료')
+            print(client['name'], ' 알람 페이지 이동 완료')
 
+            time.sleep(config.SLEEP_LONG)
             WebDriverWait(driver, config.EXPLICIT_WAIT).until(
                 EC.element_to_be_clickable((By.XPATH, config.XPATHS['login']['all_events_button']))
             ).click()

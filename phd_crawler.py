@@ -13,8 +13,9 @@ import os
 from sheets_auth_selector import load_clients_from_sheets
 from events_extractor import format_event_to_df, save_all_to_sqlite, log_failed_client
 import threading
-
-MAX_THREAD = 5
+from config import (
+    CHROMEDRIVER_PATH, AWS_LOGIN_URL_TEMPLATE, MAX_THREAD, INTERFERING_SPAN_SELECTOR, XPATHS, KEY_MAPPING
+)
 
 def get_count_and_events(client, driver, section_name, count_xpath, button_xpath, tbody_xpath, detail_xpath):
     try:
@@ -53,7 +54,7 @@ def get_count_and_events(client, driver, section_name, count_xpath, button_xpath
                     driver.execute_script("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", event_link)
                     driver.execute_script("window.scrollBy(0, -100);")
                     try:
-                        interfering_span = driver.find_element(By.CSS_SELECTOR, "[data-analytics-funnel-key='substep-name']")
+                        interfering_span = driver.find_element(By.CSS_SELECTOR, INTERFERING_SPAN_SELECTOR)
                         driver.execute_script("arguments[0].style.display = 'none';", interfering_span)
                         event_link = row.find_element(By.XPATH, "./td[2]/div/a")
                         driver.execute_script("arguments[0].click();", event_link)
@@ -66,7 +67,7 @@ def get_count_and_events(client, driver, section_name, count_xpath, button_xpath
                     status = event_details.get("상태", "-")
                     if not event_title or not status:
                         time.sleep(4)
-                        cancel_button_xpath = '/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[2]/section/div/div[2]/div[1]/div/div/button[2]'
+                        cancel_button_xpath = XPATHS["events_page"]["cancel_button"]
                         cancel_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, cancel_button_xpath)))
                         cancel_button.click()
                         time.sleep(5)
@@ -81,7 +82,7 @@ def get_count_and_events(client, driver, section_name, count_xpath, button_xpath
                     })
 
                     time.sleep(4)
-                    cancel_button_xpath = '/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[2]/section/div/div[2]/div[1]/div/div/button[2]'
+                    cancel_button_xpath = XPATHS["events_page"]["cancel_button"]
                     cancel_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, cancel_button_xpath)))
                     cancel_button.click()
                     time.sleep(5)
@@ -101,7 +102,6 @@ def get_all_sub_texts(driver, parent_xpath):
         )
         all_elements_xpath = f"{parent_xpath}//*"
         elements = driver.find_elements(By.XPATH, all_elements_xpath)
-        
         all_texts = []
         for element in elements:
             text = element.text.strip()
@@ -111,31 +111,16 @@ def get_all_sub_texts(driver, parent_xpath):
                     line = line.strip()
                     if line:
                         all_texts.append(line)
-        
-        key_mapping = {
-            "서비스": "Service",
-            "시작 시간": "Start time",
-            "상태": "Status",
-            "종료 시간": "End time",
-            "리전/가용 영역": "Region / Availability Zone",
-            "범주": "Category",
-            "계정별": "Account specific",
-            "영향을 받는 리소스": "Affected resources",
-            "설명": "Description"
-        }
-        kr_keys = list(key_mapping.keys())
-        en_keys = list(key_mapping.values())
-        
+        kr_keys = list(KEY_MAPPING.keys())
+        en_keys = list(KEY_MAPPING.values())
         event_details = {}
         i = 0
         while i < len(all_texts):
             text = all_texts[i]
             matched = False
-            
             # 한글 키 먼저 확인
             for kr_key in kr_keys:
                 if text == kr_key or text.startswith(kr_key):
-                    # 이미 해당 키가 저장되어 있다면 스킵
                     if kr_key in event_details and event_details[kr_key] != "-":
                         matched = True
                         break
@@ -159,13 +144,11 @@ def get_all_sub_texts(driver, parent_xpath):
                         event_details[kr_key] = value if value else "-"
                     matched = True
                     break
-            
             # 영어 키 확인(동일 항목이면 건너뛰도록)
             if not matched:
                 for en_key in en_keys:
                     if text == en_key or text.startswith(en_key):
-                        kr_key = [k for k, v in key_mapping.items() if v == en_key][0]
-                        # 이미 값이 저장되어 있다면 스킵
+                        kr_key = [k for k, v in KEY_MAPPING.items() if v == en_key][0]
                         if kr_key in event_details and event_details[kr_key] != "-":
                             matched = True
                             break
@@ -190,35 +173,25 @@ def get_all_sub_texts(driver, parent_xpath):
                             event_details[kr_key] = value if value else "-"
                         matched = True
                         break
-            
             i += 1
-        
-        # 누락된 키에 대해 기본값 설정
         for kr_key in kr_keys:
             if kr_key not in event_details:
                 event_details[kr_key] = "-"
-        
         return event_details
     except Exception as e:
-        return {
-            "서비스": "-", "시작 시간": "-", "상태": "-", "종료 시간": "-",
-            "리전/가용 영역": "-", "범주": "-", "계정별": "-",
-            "영향을 받는 리소스": "-", "설명": "-"
-        }
+        return {k: "-" for k in KEY_MAPPING.keys()}
 
 def get_affected_resources(client, driver):
-    affected_resources_tab_xpath = "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[1]/div/ul/li[2]/div/button"
-    affected_resources_link_xpath = "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[2]/div[2]/div/section/div/div/div[2]/div/div[1]/table/tbody/tr/td[1]/div/a"
-    affected_resources_text_xpath = "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[2]/div[2]/div/section/div/div/div[2]/div/div[1]/table/tbody/tr/td[1]/div/span"
-    next_button_xpath = "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[2]/div[2]/div/section/div/div/div[1]/div/div/div[2]/div[2]/div/ul/li[4]/button"
-
+    affected_resources_tab_xpath = XPATHS["affected_resources"]["tab"]
+    affected_resources_link_xpath = XPATHS["affected_resources"]["link"]
+    affected_resources_text_xpath = XPATHS["affected_resources"]["text"]
+    next_button_xpath = XPATHS["affected_resources"]["next_button"]
     try:
         affected_resources_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, affected_resources_tab_xpath))
         )
         affected_resources_button.click()
         time.sleep(5)
-
         affected_resources = []
         while True:
             link_elements = driver.find_elements(By.XPATH, affected_resources_link_xpath)
@@ -227,20 +200,17 @@ def get_affected_resources(client, driver):
                 resource_link = elem.get_attribute("href")
                 if resource_text:
                     affected_resources.append({"text": resource_text, "link": resource_link})
-            
             text_elements = driver.find_elements(By.XPATH, affected_resources_text_xpath)
             for elem in text_elements:
                 resource_text = elem.text.strip()
                 if resource_text:
                     affected_resources.append({"text": resource_text, "link": None})
-
             next_buttons = driver.find_elements(By.XPATH, next_button_xpath)
             if next_buttons and next_buttons[0].is_enabled():
                 next_buttons[0].click()
                 time.sleep(5)
             else:
                 break
-
         return affected_resources if affected_resources else "-"
     except Exception as e:
         return "-"
@@ -250,66 +220,60 @@ def process_account(client, chromedriver_path):
     attempt = 1
     while attempt <= max_attempts:
         print(f"{client['name']} 계정 처리 시작... (시도 {attempt}/{max_attempts})")
-        
         options = webdriver.ChromeOptions()
-        options.add_argument("headless")
+        # options.add_argument("headless")
         options.add_argument('--disable-gpu') 
         options.add_experimental_option("detach", True)
         options.add_argument('--start-maximized')
         service = Service(executable_path=chromedriver_path)
         driver = webdriver.Chrome(service=service, options=options)
-
         try:
-            aws_login_url = f"https://{client['account']}.signin.aws.amazon.com/console"
+            aws_login_url = AWS_LOGIN_URL_TEMPLATE.format(account=client['account'])
             driver.get(aws_login_url)
             time.sleep(3)
             WebDriverWait(driver, 30).until(lambda d: d.execute_script('return document.readyState') == 'complete')
-
             username_field = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.ID, "username")))
             username_field.send_keys(client['username'])
-
             password_field = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.ID, "password")))
             password_field.send_keys(client['password'])
-
             signin_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "signin_button")))
             signin_button.click()
-
             time.sleep(3)
-            mfa_field = WebDriverWait(driver, 15).until(EC.visibility_of_element_located((By.ID, "mfaCode")))
+
+
+            mfa_field = WebDriverWait(driver, 10).until(EC.visibility_of_element_located((By.ID, "mfaCode")))
             totp = pyotp.TOTP(client['mfaSecret'])
             mfa_code = totp.now()
             mfa_field.send_keys(mfa_code)
+            
 
             submit_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.CSS_SELECTOR, "button[type='submit'], button.awsui-button")))
             submit_button.click()
-
+            
             time.sleep(3)
             WebDriverWait(driver, 15).until(EC.any_of(EC.url_contains("console.aws.amazon.com"), EC.presence_of_element_located((By.ID, "aws-console-root"))))
             time.sleep(5)
-            alarm_button_selector = "/html/body/div[2]/div[1]/div/div[3]/div/header/nav/div[1]/div[3]/div[2]/div[1]/div/div/button"
+            alarm_button_selector = XPATHS["login"]["alarm_button"]
             print(client['name'], ': 알람 버튼 경로 확인 완료')
             time.sleep(8)
             alarm_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, alarm_button_selector)))
             alarm_button.click()
             time.sleep(0.5)
-            all_events_button_xpath = "/html/body/div[2]/div[1]/div/div[3]/div/header/nav/div[1]/div[3]/div[2]/div[1]/div/div/div/div/footer/div[1]/a"
+            all_events_button_xpath = XPATHS["login"]["all_events_button"]
             all_events_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, all_events_button_xpath)))
             all_events_button.click()
-
             time.sleep(5)
-            unresolved_issues_count_xpath = "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[1]/div/a/span/span/span/span"
-            unresolved_issues_button_xpath = "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[1]/div/a"
-            scheduled_changes_count_xpath = "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[2]/div/a/span/span/span/span"
-            scheduled_changes_button_xpath = "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[2]/div/a"
-            other_notifications_count_xpath = "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[3]/div/a/span/span/span/span"
-            other_notifications_button_xpath = "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[3]/div/a"
-            tbody_xpath = "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[2]/div/div/section/div/div/div[2]/div/div[1]/table/tbody"
-            detail_xpath = "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[2]/div[1]/div/div/div[2]/div"
-
+            unresolved_issues_count_xpath = XPATHS["events_page"]["unresolved"]["count"]
+            unresolved_issues_button_xpath = XPATHS["events_page"]["unresolved"]["button"]
+            scheduled_changes_count_xpath = XPATHS["events_page"]["scheduled"]["count"]
+            scheduled_changes_button_xpath = XPATHS["events_page"]["scheduled"]["button"]
+            other_notifications_count_xpath = XPATHS["events_page"]["other"]["count"]
+            other_notifications_button_xpath = XPATHS["events_page"]["other"]["button"]
+            tbody_xpath = XPATHS["events_page"]["tbody"]
+            detail_xpath = XPATHS["events_page"]["detail"]
             unresolved_count, unresolved_events = get_count_and_events(client, driver, "미해결 문제 및 최근 문제", unresolved_issues_count_xpath, unresolved_issues_button_xpath, tbody_xpath, detail_xpath)
             scheduled_count, scheduled_events = get_count_and_events(client, driver, "예정된 변경 사항", scheduled_changes_count_xpath, scheduled_changes_button_xpath, tbody_xpath, detail_xpath)
             other_count, other_events = get_count_and_events(client, driver, "기타 알림", other_notifications_count_xpath, other_notifications_button_xpath, tbody_xpath, detail_xpath)
-
             total_events = unresolved_events + scheduled_events + other_events
             result = {
                 "name": client["name"],
@@ -323,13 +287,10 @@ def process_account(client, chromedriver_path):
                     "other": other_events,
                 }
             }
-            
             if not total_events:
                 result["events"] = {"unresolved": [{"title": "-", "details": {}, "affected_resources": "-", "status": "-"}]}
-
             driver.quit()
             return result
-
         except Exception as e:
             driver.quit()
             attempt += 1
@@ -341,13 +302,10 @@ def main():
     start_time = time.time()
     sheet_title = "SRE1_자동화 고객사 목록"
     clients = load_clients_from_sheets(sheet_title)
-
     if not clients:
         return
-
-    chromedriver_path = os.path.join(os.getcwd(), "chromedriver.exe")
+    chromedriver_path = CHROMEDRIVER_PATH
     all_results = []
-
     with ThreadPoolExecutor(max_workers=MAX_THREAD) as executor:
         future_to_client = {executor.submit(process_account, client, chromedriver_path): client for client in clients}
         for future in as_completed(future_to_client):
@@ -358,7 +316,6 @@ def main():
                 all_results.append((sheet_name, records))
             except Exception as e:
                 log_failed_client(client['name'], str(e))
-
     save_all_to_sqlite(all_results)
     end_time = time.time()
     print("총 걸린 시간: ", end_time - start_time)
