@@ -121,18 +121,6 @@ def get_all_sub_texts(driver, parent_xpath):
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.XPATH, parent_xpath))
         )
-        all_elements_xpath = f"{parent_xpath}//*"
-        elements = driver.find_elements(By.XPATH, all_elements_xpath)
-        
-        all_texts = []
-        for element in elements:
-            text = element.text.strip()
-            if text and text != '-' and text != "이 이벤트에 대한 피드백" and text != "Feedback for this event":
-                lines = text.split('\n')
-                for line in lines:
-                    line = line.strip()
-                    if line:
-                        all_texts.append(line)
         
         key_mapping = {
             "서비스": "Service",
@@ -149,84 +137,147 @@ def get_all_sub_texts(driver, parent_xpath):
         en_keys = list(key_mapping.values())
         
         event_details = {}
-        i = 0
-        while i < len(all_texts):
-            text = all_texts[i]
-            matched = False
-            
-            # 한글 키 먼저 확인
-            for kr_key in kr_keys:
-                if text == kr_key or text.startswith(kr_key):
-                    # 이미 해당 키가 저장되어 있다면 스킵
-                    if kr_key in event_details and event_details[kr_key] != "-":
-                        matched = True
-                        break
-                    value = text[len(kr_key):].strip() if text != kr_key else None
-                    if not value and i + 1 < len(all_texts):
-                        next_text = all_texts[i + 1].strip()
-                        if not any(next_text.startswith(k) for k in kr_keys + en_keys):
-                            value = next_text
-                            i += 1
-                    if kr_key == "종료 시간":
-                        event_details[kr_key] = "-" if not value or value == "-" else value
-                    elif kr_key == "설명":
-                        description_lines = [value] if value else []
-                        j = i + 1
-                        while j < len(all_texts) and not any(all_texts[j].startswith(k) for k in kr_keys + en_keys):
-                            description_lines.append(all_texts[j].strip().replace('\\n', '\n'))
-                            j += 1
-                        event_details[kr_key] = "\n".join(description_lines) if description_lines else "-"
-                        i = j - 1
-                    else:
-                        event_details[kr_key] = value if value else "-"
-                    matched = True
-                    break
-            
-            # 영어 키 확인(동일 항목이면 건너뛰도록)
-            if not matched:
-                for en_key in en_keys:
-                    if text == en_key or text.startswith(en_key):
-                        kr_key = [k for k, v in key_mapping.items() if v == en_key][0]
-                        # 이미 값이 저장되어 있다면 스킵
-                        if kr_key in event_details and event_details[kr_key] != "-":
-                            matched = True
-                            break
-                        value = text[len(en_key):].strip() if text != en_key else None
-                        if not value and i + 1 < len(all_texts):
-                            next_text = all_texts[i + 1].strip()
-                            if not any(next_text.startswith(k) for k in kr_keys + en_keys):
-                                value = next_text
-                                i += 1
-                        if kr_key == "종료 시간":
-                            event_details[kr_key] = "-" if not value or value == "-" else value
-                        elif kr_key == "설명":
-                            description_lines = [value] if value else []
-                            j = i + 1
-                            while j < len(all_texts) and not any(all_texts[j].startswith(k) for k in kr_keys + en_keys):
-                                description_lines.append(all_texts[j].strip().replace('\\n', '\n'))
-                                j += 1
-                            if kr_key not in event_details or event_details[kr_key] == "-":
-                                event_details[kr_key] = "\n".join(description_lines) if description_lines else "-"
-                            i = j - 1
-                        else:
-                            event_details[kr_key] = value if value else "-"
-                        matched = True
-                        break
-            
-            i += 1
         
-        # 누락된 키에 대해 기본값 설정
+        # 키-값 쌍 수집
         for kr_key in kr_keys:
-            if kr_key not in event_details:
+            en_key = key_mapping[kr_key]
+            # 키가 포함된 요소 찾기
+            try:
+                key_element = driver.find_element(By.XPATH, f"{parent_xpath}//*[contains(text(), '{kr_key}') or contains(text(), '{en_key}')]")
+                # 키 다음의 값 요소 찾기 (예: following-sibling 또는 부모-자식 관계)
+                value_element = key_element.find_element(By.XPATH, "following-sibling::*[1] | ..//following-sibling::*[1]")
+                value = value_element.text.strip() or "-"
+                event_details[kr_key] = value if value not in ['-', ''] else "-"
+            except Exception:
                 event_details[kr_key] = "-"
+        
+        # 설명 텍스트 별도 수집
+        try:
+            description_elements = driver.find_elements(By.XPATH, f"{parent_xpath}//*[contains(text(), '설명') or contains(text(), 'Description')]/following-sibling::*[not(contains(text(), '서비스') or contains(text(), '상태') or contains(text(), '리전') or contains(text(), '시작 시간') or contains(text(), '종료 시간') or contains(text(), '범주') or contains(text(), '계정별') or contains(text(), '영향을 받는 리소스'))]")
+            description_lines = [el.text.strip() for el in description_elements if el.text.strip() and el.text.strip() not in ['-', '이 이벤트에 대한 피드백', 'Feedback for this event']]
+            event_details["설명"] = "\n".join(description_lines) if description_lines else "-"
+        except Exception:
+            event_details["설명"] = "-"
         
         return event_details
     except Exception as e:
+        print(f"텍스트 추출 중 에러: {e}")
         return {
             "서비스": "-", "시작 시간": "-", "상태": "-", "종료 시간": "-",
             "리전/가용 영역": "-", "범주": "-", "계정별": "-",
             "영향을 받는 리소스": "-", "설명": "-"
         }
+# def get_all_sub_texts(driver, parent_xpath):
+#     try:
+#         WebDriverWait(driver, 10).until(
+#             EC.presence_of_element_located((By.XPATH, parent_xpath))
+#         )
+#         all_elements_xpath = f"{parent_xpath}//*"
+#         elements = driver.find_elements(By.XPATH, all_elements_xpath)
+        
+#         all_texts = []
+#         for element in elements:
+#             text = element.text.strip()
+#             if text and text != '-' and text != "이 이벤트에 대한 피드백" and text != "Feedback for this event":
+#                 lines = text.split('\n')
+#                 for line in lines:
+#                     line = line.strip()
+#                     if line:
+#                         all_texts.append(line)
+        
+#         key_mapping = {
+#             "서비스": "Service",
+#             "시작 시간": "Start time",
+#             "상태": "Status",
+#             "종료 시간": "End time",
+#             "리전/가용 영역": "Region / Availability Zone",
+#             "범주": "Category",
+#             "계정별": "Account specific",
+#             "영향을 받는 리소스": "Affected resources",
+#             "설명": "Description"
+#         }
+#         kr_keys = list(key_mapping.keys())
+#         en_keys = list(key_mapping.values())
+        
+#         event_details = {}
+#         i = 0
+#         while i < len(all_texts):
+#             text = all_texts[i]
+#             matched = False
+            
+#             # 한글 키 먼저 확인
+#             for kr_key in kr_keys:
+#                 if text == kr_key or text.startswith(kr_key):
+#                     # 이미 해당 키가 저장되어 있다면 스킵
+#                     if kr_key in event_details and event_details[kr_key] != "-":
+#                         matched = True
+#                         break
+#                     value = text[len(kr_key):].strip() if text != kr_key else None
+#                     if not value and i + 1 < len(all_texts):
+#                         next_text = all_texts[i + 1].strip()
+#                         if not any(next_text.startswith(k) for k in kr_keys + en_keys):
+#                             value = next_text
+#                             i += 1
+#                     if kr_key == "종료 시간":
+#                         event_details[kr_key] = "-" if not value or value == "-" else value
+#                     elif kr_key == "설명":
+#                         description_lines = [value] if value else []
+#                         j = i + 1
+#                         while j < len(all_texts) and not any(all_texts[j].startswith(k) for k in kr_keys + en_keys):
+#                             description_lines.append(all_texts[j].strip().replace('\\n', '\n'))
+#                             j += 1
+#                         event_details[kr_key] = "\n".join(description_lines) if description_lines else "-"
+#                         i = j - 1
+#                     else:
+#                         event_details[kr_key] = value if value else "-"
+#                     matched = True
+#                     break
+            
+#             # 영어 키 확인(동일 항목이면 건너뛰도록)
+#             if not matched:
+#                 for en_key in en_keys:
+#                     if text == en_key or text.startswith(en_key):
+#                         kr_key = [k for k, v in key_mapping.items() if v == en_key][0]
+#                         # 이미 값이 저장되어 있다면 스킵
+#                         if kr_key in event_details and event_details[kr_key] != "-":
+#                             matched = True
+#                             break
+#                         value = text[len(en_key):].strip() if text != en_key else None
+#                         if not value and i + 1 < len(all_texts):
+#                             next_text = all_texts[i + 1].strip()
+#                             if not any(next_text.startswith(k) for k in kr_keys + en_keys):
+#                                 value = next_text
+#                                 i += 1
+#                         if kr_key == "종료 시간":
+#                             event_details[kr_key] = "-" if not value or value == "-" else value
+#                         elif kr_key == "설명":
+#                             description_lines = [value] if value else []
+#                             j = i + 1
+#                             while j < len(all_texts) and not any(all_texts[j].startswith(k) for k in kr_keys + en_keys):
+#                                 description_lines.append(all_texts[j].strip().replace('\\n', '\n'))
+#                                 j += 1
+#                             if kr_key not in event_details or event_details[kr_key] == "-":
+#                                 event_details[kr_key] = "\n".join(description_lines) if description_lines else "-"
+#                             i = j - 1
+#                         else:
+#                             event_details[kr_key] = value if value else "-"
+#                         matched = True
+#                         break
+            
+#             i += 1
+        
+#         # 누락된 키에 대해 기본값 설정
+#         for kr_key in kr_keys:
+#             if kr_key not in event_details:
+#                 event_details[kr_key] = "-"
+        
+#         return event_details
+#     except Exception as e:
+#         return {
+#             "서비스": "-", "시작 시간": "-", "상태": "-", "종료 시간": "-",
+#             "리전/가용 영역": "-", "범주": "-", "계정별": "-",
+#             "영향을 받는 리소스": "-", "설명": "-"
+#         }
 
 
 def get_affected_resources(client, driver):

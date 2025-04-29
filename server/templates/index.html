@@ -200,31 +200,37 @@
     .event-table tr:last-child td {
       border-bottom: none;
     }
-    /* 이벤트 테이블 각 컬럼 폭 (합계 100%) */
-    /* .th-event-title { width:15%; }
-    .th-service       { width:4%; }
-    .th-start         { width:10%; }
-    .th-end           { width:10%; }
-    .th-status        { width:5%; }
-    .th-region        { width:6%; }
-    .th-category      { width:7%; }
-    .th-account-specific { width:5%; }
-    .th-description   { width:20%; }
-    .th-affected-resources-list { width:8%; } */
-    /* 이벤트 설명 - 3줄 제한 및 펼침/접힘 기능 수정 */
+
     .desc-text {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      overflow: hidden;
+
+      /* ▼ transition을 위해 기본 max-height 설정 */
+      max-height: 4.5em;                /* 접힌 상태 */
+      line-height: 1.5;
+      transition: max-height .35s ease; /* 부드럽게 */
+    }
+    /* expanded 상태에서는 줄임 효과 해제 */
+    .desc-text.expanded {
+      -webkit-line-clamp: unset;  /* 줄임 해제 */
+      overflow: visible;
+      max-height: 100%;         /* 충분히 큰 값 ⇒ 애니메이션 가능 */
+    }
+    /* .desc-text {
       display: -webkit-box;
       -webkit-box-orient: vertical;
       overflow: hidden;
       -webkit-line-clamp: 3;
       line-height: 1.5;
     }
-    /* expanded 상태에서는 줄임 효과 해제 */
+    /* expanded 상태에서는 줄임 효과 해제
     .desc-text.expanded {
       -webkit-line-clamp: none;
       overflow: visible;
       display: block;
-    }
+    } */
     .read-more {
       display: inline-block;
       margin-top: 5px;
@@ -242,7 +248,7 @@
     </div>
     <!-- 검색 입력창 -->
     <div class="search-bar">
-      <input type="text" id="search-input" class="form-control" placeholder="고객사 또는 계정을 검색하세요">
+      <input type="text" id="search-input" class="form-control" placeholder="고객사, 계정, 담당자를 검색하세요">
     </div>
     <!-- 상단 정렬용 컬럼 블록 -->
     <div class="sort-header">
@@ -258,8 +264,8 @@
       <div class="sort-item client-last" data-column="last">
         마지막 확인 일시 <i class="fas fa-sort"></i>
       </div>
-      <div class="sort-item events">
-        이벤트
+      <div class="sort-item events" data-column="events">
+          이벤트 <i class="fas fa-sort"></i>
       </div>
     </div>
     <!-- 클라이언트 카드 리스트 -->
@@ -319,16 +325,24 @@
             valA = a.last_crawled!=='N/A' ? new Date(a.last_crawled) : new Date(0);
             valB = b.last_crawled!=='N/A' ? new Date(b.last_crawled) : new Date(0);
             return sortOrder === 'asc' ? valA - valB : valB - valA;
+          case 'events':
+            // 이벤트 있는 항목(true)=1, 없는(false)=0
+            valA = a.events.length > 0 ? 1 : 0;
+            valB = b.events.length > 0 ? 1 : 0;
+            // 내림차순(desc)일 때 events 있는 게 위로, 오름차순(asc)이면 없는 게 위로
+            return sortOrder === 'asc' ? valA - valB : valB - valA;
+
           default:
             return 0;
         }
       });
 
-      const term = document.getElementById('search-input').value.trim().toLowerCase();
-      if (term) {
-        sortedData = sortedData.filter(c =>
-          c.name.toLowerCase().includes(term) ||
-          c.account_id.toLowerCase().includes(term)
+      const searchTerm = document.getElementById('search-input').value.trim().toLowerCase();
+      if (searchTerm) {
+        sortedData = sortedData.filter(client =>
+          client.name.toLowerCase().includes(searchTerm) ||
+          client.account_id.toLowerCase().includes(searchTerm) ||
+          (client.owner || '').toLowerCase().includes(searchTerm)
         );
       }
 
@@ -368,16 +382,16 @@
           detailsDiv.innerHTML = `
             <table class="event-table">
               <colgroup>
-                <col style="width:15%;">
+                <col style="width:13%;">
                 <col style="width:5%;">
-                <col style="width:5%;">
-                <col style="width:5%;">
+                <col style="width:8%;">
+                <col style="width:8%;">
                 <col style="width:5%;">
                 <col style="width:5%;">
                 <col style="width:7%;">
                 <col style="width:5%;">
-                <col style="width:40%;">
-                <col style="width:18%;">
+                <col style="width:31%;">
+                <col style="width:13%;">
               </colgroup>
               <thead>
                 <tr>

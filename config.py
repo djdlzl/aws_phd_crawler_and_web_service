@@ -84,7 +84,7 @@ GSHEET_SCOPE = [
     "https://spreadsheets.google.com/feeds",
     "https://www.googleapis.com/auth/drive"
 ]
-SHEET_RANGE = "A18:AC18"
+SHEET_RANGE = "A6:AC6"
 
 # Missing clients logger
 MISSING_CLIENTS_LOG_FILE = "missing_clients.log"
