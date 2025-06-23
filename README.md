@@ -1,4 +1,4 @@
-﻿# aws phd crawler and web service
+﻿# AWS PHD 통합 대시보드
 
 ## 개요
 `aws phd crawler and web service` 프로젝트는 여러 AWS 계정의 Personal Health Dashboard(PHD) 이벤트를 크롤링하여 SQLite 데이터베이스에 저장하고, Flask 기반 웹 서비스로 조회할 수 있게 구성된 애플리케이션입니다.
