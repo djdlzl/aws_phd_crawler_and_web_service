@@ -36,26 +36,26 @@ XPATHS = {
     },
     "events_page": {
         "unresolved": {
-            "count": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[1]/div/a/span/span/span/span",
-            "button": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[1]/div/a",
+            "count": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[1]/div/a/span/span/span/span",
+            "button": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[1]/div/a",
         },
         "scheduled": {
-            "count": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[2]/div/a/span/span/span/span",
-            "button": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[2]/div/a",
+            "count": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[2]/div/a/span/span/span/span",
+            "button": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[2]/div/a",
         },
         "other": {
-            "count": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[3]/div/a/span/span/span/span",
-            "button": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[3]/div/a",
+            "count": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[3]/div/a/span/span/span/span",
+            "button": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[1]/div[2]/div/div[1]/div/ul/li[3]/div/a",
         },
-        "tbody": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[2]/div/div/section/div/div/div[2]/div/div[1]/table/tbody",
-        "detail": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[2]/div[1]/div/div/div[2]/div",
-        "cancel_button": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[2]/section/div/div[2]/div[1]/div/div/button[2]",
+        "tbody": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/div/main/div[1]/div/div/div[3]/div[1]/div[2]/div/div/section/div/div/div[2]/div/div[1]/table/tbody",
+        "detail": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[2]/div[1]/div/div/div[2]/div",
+        "cancel_button": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/div/main/div[2]/section/div/div[2]/div[1]/div/div/button[2]",
     },
     "affected_resources": {
-        "tab": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[1]/div/ul/li[2]/div/button",
-        "link": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[2]/div[2]/div/section/div/div/div[2]/div/div[1]/table/tbody/tr/td[1]/div/a",
-        "text": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[2]/div[2]/div/section/div/div/div[2]/div/div[1]/table/tbody/tr/td[1]/div/span",
-        "next_button": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[2]/div[2]/div/section/div/div/div[1]/div/div/div[2]/div[2]/div/ul/li[4]/button",
+        "tab": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[1]/div/ul/li[2]/div/button",
+        "link": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[2]/div[2]/div/section/div/div/div[2]/div/div[1]/table/tbody/tr/td[1]/div/a",
+        "text": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[2]/div[2]/div/section/div/div/div[2]/div/div[1]/table/tbody/tr/td[1]/div/span",
+        "next_button": "/html/body/div[2]/div[2]/div/div[1]/div/div/div/div/main/div[2]/section/div/div[2]/div[2]/div/div/div/div/div/div/div[2]/div[2]/div/section/div/div/div[1]/div/div/div[2]/div[2]/div/ul/li[4]/button",
     },
 }
 

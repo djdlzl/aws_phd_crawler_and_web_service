@@ -23,7 +23,8 @@ def init_driver():
     try:
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_experimental_option("excludeSwitches", ['enable-logging'])
-        chrome_options.add_argument("headless")
+        # chrome_options.add_argument("headless")
+        chrome_options.add_argument('--enable-unsafe-swiftshader')
         chrome_options.add_argument("window-size=1920,1080")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
@@ -41,11 +42,13 @@ def init_driver():
 
 def get_count_and_events(client, driver, section_name, count_xpath, button_xpath, tbody_xpath, detail_xpath):
     try:
+        print("get_count_and_events 시작")
         link = WebDriverWait(driver, config.EXPLICIT_WAIT).until(
             EC.visibility_of_element_located((By.XPATH, count_xpath))
         )
         count_text = link.text.strip()
         count = int(re.search(r'\d+', count_text).group() if re.search(r'\d+', count_text) else '0')
+        print("count: ", count)
     except TimeoutException:
         count = 0
 
@@ -56,13 +59,16 @@ def get_count_and_events(client, driver, section_name, count_xpath, button_xpath
                 EC.element_to_be_clickable((By.XPATH, button_xpath))
             )
             button.click()
+            print('버튼 클릭 완료')
             time.sleep(config.SLEEP_SHORT)
 
             WebDriverWait(driver, config.EXPLICIT_WAIT).until(
                 EC.presence_of_element_located((By.XPATH, tbody_xpath))
             )
             rows = driver.find_elements(By.XPATH, f"{tbody_xpath}/tr")
+            print('rows 확인 완료')
             if not rows:
+                print('이걸로 끝나나')
                 return count, events
 
             for row in rows:
@@ -84,7 +90,7 @@ def get_count_and_events(client, driver, section_name, count_xpath, button_xpath
 
                     driver.execute_script("arguments[0].click();", event_link_elem)
                     time.sleep(config.SLEEP_LONG)
-
+                    
                     # 상세 정보 수집
                     event_details = get_all_sub_texts(driver, detail_xpath)
                     status = event_details.get("상태", "-")
@@ -155,10 +161,14 @@ def get_all_sub_texts(driver, parent_xpath):
         try:
             description_elements = driver.find_elements(By.XPATH, f"{parent_xpath}//*[contains(text(), '설명') or contains(text(), 'Description')]/following-sibling::*[not(contains(text(), '서비스') or contains(text(), '상태') or contains(text(), '리전') or contains(text(), '시작 시간') or contains(text(), '종료 시간') or contains(text(), '범주') or contains(text(), '계정별') or contains(text(), '영향을 받는 리소스'))]")
             description_lines = [el.text.strip() for el in description_elements if el.text.strip() and el.text.strip() not in ['-', '이 이벤트에 대한 피드백', 'Feedback for this event']]
+            print('description_lines: ',description_lines)
             event_details["설명"] = "\n".join(description_lines) if description_lines else "-"
+            print('여기까지 됨.', event_details["설명"])
         except Exception:
+            print('설명이 - 로 저장')
             event_details["설명"] = "-"
         
+        print('get_all_sub_texts 동작 완료')
         return event_details
     except Exception as e:
         print(f"텍스트 추출 중 에러: {e}")
@@ -167,6 +177,7 @@ def get_all_sub_texts(driver, parent_xpath):
             "리전/가용 영역": "-", "범주": "-", "계정별": "-",
             "영향을 받는 리소스": "-", "설명": "-"
         }
+
 # def get_all_sub_texts(driver, parent_xpath):
 #     try:
 #         WebDriverWait(driver, 10).until(
@@ -364,13 +375,14 @@ def process_account(client):
                 EC.element_to_be_clickable((By.XPATH, config.XPATHS['login']['alarm_button']))
             ).click()
             time.sleep(config.SLEEP_MEDIUM)
-            print(client['name'], ' 알람 페이지 이동 완료')
+            print(client['name'], ' 알람 페이지 펼치기 완료')
 
             time.sleep(config.SLEEP_LONG)
             WebDriverWait(driver, config.EXPLICIT_WAIT).until(
                 EC.element_to_be_clickable((By.XPATH, config.XPATHS['login']['all_events_button']))
             ).click()
             time.sleep(config.SLEEP_LONG)
+            print(client['name'], ' 헬스대시보드 입장')
 
             # 이벤트 수집
             unresolved_count, unresolved_events = get_count_and_events(

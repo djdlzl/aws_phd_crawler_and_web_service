@@ -6,6 +6,8 @@ import os
 import pytz
 import config
 from flask_cors import CORS
+from azure_openai import format_event_data, get_event_data
+
 
 
 app = Flask(__name__)
@@ -191,6 +193,24 @@ def save_events():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/generate-message/<int:event_id>', methods=['GET'])
+def generate_message_endpoint(event_id):
+    try:
+        # azure_openai.py의 get_event_data로 이벤트 데이터 조회
+        event_data = get_event_data(event_id, DB_PATH)
+
+        # azure_openai.py의 format_event_data로 메시지 생성
+        formatted_message = format_event_data(event_data)
+
+        return jsonify({
+            "message": formatted_message,
+            "event_data": event_data
+        })
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 404
+    except Exception as e:
+        return jsonify({"error": f"메일 생성 실패: {str(e)}"}), 500
+
 @app.route('/api/clients', methods=['GET'])
 def get_clients():
     try:
@@ -248,6 +268,35 @@ def update_owner(client_id):
     conn.commit()
     conn.close()
     return jsonify({"message": "담당자 업데이트 성공"}), 200
+
+@app.route('/api/clients/delete', methods=['DELETE'])
+def delete_clients():
+    try:
+        client_ids = request.json.get('client_ids', [])
+        if not client_ids:
+            return jsonify({"error": "삭제할 고객사 ID가 제공되지 않았습니다."}), 400
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # 트랜잭션 시작
+        conn.execute('BEGIN TRANSACTION')
+        try:
+            for client_id in client_ids:
+                # 이벤트 삭제
+                cursor.execute("DELETE FROM events WHERE client_id = ?", (client_id,))
+                # 고객사 삭제
+                cursor.execute("DELETE FROM clients WHERE client_id = ?", (client_id,))
+            
+            conn.commit()
+            return jsonify({"message": f"{len(client_ids)}개 고객사 삭제 완료"}), 200
+        except Exception as e:
+            conn.rollback()
+            return jsonify({"error": f"삭제 중 오류 발생: {str(e)}"}), 500
+        finally:
+            conn.close()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     init_db()

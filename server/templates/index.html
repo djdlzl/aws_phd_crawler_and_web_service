@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AWS PHD Events - Percentage Based Layout</title>
-  <!-- 구글 폰트 (Noto Sans KR) -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <style>
     html, body {
       margin: 0;
@@ -16,9 +16,11 @@
       background-color: #f5f7fa;
       font-family: 'Noto Sans KR', sans-serif;
     }
+
     body {
       padding: 20px;
     }
+
     /* 전체 컨테이너 (100% 폭) */
     .container {
       margin: 30px auto;
@@ -28,6 +30,7 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
       padding: 25px;
     }
+
     .header {
       text-align: center;
       margin-bottom: 35px;
@@ -57,14 +60,24 @@
       align-items: center;
     }
     /* 각 컬럼의 폭 지정 (합계 100%) */
-    .sort-item.client-name { width: 25%; }
+    .sort-item.client-name { width: 30%; }
+    .client-name .client-count {      }
     .sort-item.client-account { width: 15%; }
-    .sort-item.client-owner  { width: 15%; }
+    .sort-item.client-owner  { width: 20%; }
     .sort-item.client-last { width: 20%; }
-    .sort-item.events { width: 15%; text-align: center; cursor: default; }
+    .sort-item.client-events { width: 15%; text-align: center; cursor: default; }
     .sort-item i {
       margin-left: 5px;
       font-size: 12px;
+      visibility: visible;
+      opacity: 0.3;
+      transition: opacity 0.2s;
+    }
+    .sort-item:hover i {
+      opacity: 0.7;
+    }
+    .sort-item.active i {
+      opacity: 1;
     }
     .sort-item.active {
       color: #333;
@@ -78,13 +91,18 @@
     .client-col {
       padding: 5px 10px;
     }
-    .client-col.client-name { width: 25%; }
+    .client-col.client-name {
+      width: 30%; }
     .client-col.client-account { width: 15%; }
-    .client-col.client-owner  { width: 15%; }
-    .client-col.client-last { width: 20%; }
-    .client-col.client-events { width: 15%; text-align: center; }
+    .client-col.client-owner {
+      width: 20%;
+    }
+    .client-col.client-last {
+      width: 20%; }
+    .client-col.client-events {
+      width: 15%; text-align: center; }
     .client-name {
-      font-weight: 700;
+      font-weight: bold;
       font-size: 18px;
       color: #333;
     }
@@ -119,11 +137,12 @@
       cursor: pointer;
       font-size: 14px;
       color: #888;
+      margin-left: 5px;
     }
 
     .edit-owner:hover,
     .save-owner:hover,
-    .cancel-owner:hover {
+      .cancel-owner:hover {
       color: #333;
     }
 
@@ -162,84 +181,107 @@
       color: #fff;
       transition: background-color 0.3s;
     }
-    .btn-event:hover {
-      background-color: #00bb92;
-    }
-    /* 이벤트 상세 영역 (애니메이션 효과 포함) */
-    .event-details {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.4s ease-in-out, padding-top 0.4s ease-in-out;
-      padding-top: 0;
-    }
-    .event-details.show {
-      /* max-height: 100%; 내용에 따라 조정 */
-      padding-top: 15px;
-    }
-    /* 이벤트 상세 테이블 - 각 컬럼 % 지정 */
-    .event-table {
-      width: 100%;
-      table-layout: fixed;
-      border-collapse: collapse;
-      background: #fafafa;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .event-table th,
-    .event-table td {
-      padding: 12px 15px;
-      border-bottom: 1px solid #e0e0e0;
-      font-size: 14px;
-      color: #333;
-      text-align: left;
-    }
-    .event-table th {
-      background-color: #f1f1f1;
-      font-weight: 700;
-    }
-    .event-table tr:last-child td {
-      border-bottom: none;
-    }
+  .btn-event:hover {
+    background-color: #00bb92;
+  }
+  /* 이벤트 상세 영역 (애니메이션 효과 포함 시도) */
+  .event-details {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out, padding-top 0.4s ease-in-out;
+    padding-top: 0;
+  }
+  .event-details.show {
+    /* max-height: 100%; 내용에 따라 조정 */
+    padding-top: 15px;
+  }
+  /* 이벤트 상세 테이블 - 각 컬럼 % 지정 */
+  .event-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    background: #fafafa;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .event-table th,
+  .event-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 14px;
+    color: #333;
+    text-align: left;
+  }
+  .event-table th {
+    background-color: #f1f1f1;
+    font-weight: 700;
+  }
+  .event-table tr:last-child td {
+    border-bottom: none;
+  }
 
-    .desc-text {
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 3;
-      overflow: hidden;
+  .desc-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
 
-      /* ▼ transition을 위해 기본 max-height 설정 */
-      max-height: 4.5em;                /* 접힌 상태 */
-      line-height: 1.5;
-      transition: max-height .35s ease; /* 부드럽게 */
-    }
-    /* expanded 상태에서는 줄임 효과 해제 */
-    .desc-text.expanded {
-      -webkit-line-clamp: unset;  /* 줄임 해제 */
-      overflow: visible;
-      max-height: 100%;         /* 충분히 큰 값 ⇒ 애니메이션 가능 */
-    }
-    /* .desc-text {
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      -webkit-line-clamp: 3;
-      line-height: 1.5;
-    }
-    /* expanded 상태에서는 줄임 효과 해제
-    .desc-text.expanded {
-      -webkit-line-clamp: none;
-      overflow: visible;
-      display: block;
-    } */
-    .read-more {
-      display: inline-block;
-      margin-top: 5px;
-      font-size: 12px;
-      color: #00c389;
-      cursor: pointer;
-      text-decoration: underline;
-    }
-  </style>
+    /* ▼ transition을 위해 기본 max-height 설정 */
+    max-height: 4.5em;                /* 접힌 상태 */
+    line-height: 1.5;
+    transition: max-height .35s ease; /* 부드럽게 */
+  }
+  /* expanded 상태에서는 줄임 효과 해제 */
+  .desc-text.expanded {
+    -webkit-line-clamp: unset;  /* 줄임 해제 */
+    overflow: visible;
+    max-height: 100%;         /* 충분히 큰 값 ⇒ 애니메이션 가능 */
+  }
+  /* .desc-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    -webkit-line-clamp: 3;
+    line-height: 1.5;
+  }
+  /* expanded 상태에서는 줄임 효과 해제
+  .desc-text.expanded {
+    -webkit-line-clamp: none;
+    overflow: visible;
+    display: block;
+  } */
+  .read-more {
+    display: inline-block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #00c389;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  /* style 태그 내 추가 */
+  .btn-generate-mail {
+    font-size: 13px;
+    padding: 6px 12px;
+    background-color: #007bff;
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    transition: background-color 0.3s;
+  }
+  .btn-generate-mail:hover {
+    background-color: #0056b3;
+  }
+  #mailContent {
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    resize: none;
+  }
+  .btn-generate-mail:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+</style>
 </head>
 <body>
   <div class="container">
@@ -247,8 +289,17 @@
       <h2>AWS PHD Events</h2>
     </div>
     <!-- 검색 입력창 -->
-    <div class="search-bar">
+    <div class="search-bar d-flex">
       <input type="text" id="search-input" class="form-control" placeholder="고객사, 계정, 담당자를 검색하세요">
+      <button id="delete-toggle-btn" class="btn btn-outline-danger ms-2" title="고객사 삭제 모드">
+        <i class="fas fa-trash-alt"></i>
+      </button>
+    </div>
+    <!-- 삭제 모드 컨트롤 -->
+    <div id="delete-controls" class="d-none mb-3">
+      <button id="delete-confirm-btn" class="btn btn-danger me-2" disabled>삭제하기</button>
+      <button id="delete-cancel-btn" class="btn btn-secondary">취소</button>
+      <span class="ms-2 text-muted">삭제할 고객사를 선택하세요</span>
     </div>
     <!-- 상단 정렬용 컬럼 블록 -->
     <div class="sort-header">
@@ -273,12 +324,32 @@
       <!-- JavaScript로 클라이언트 카드 생성 -->
     </ul>
   </div>
+  <!-- 메일 작성 결과 모달 -->
+  <div class="modal fade" id="mailModal" tabindex="-1" aria-labelledby="mailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="mailModalLabel">메일 작성 결과</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <textarea id="mailContent" class="form-control" rows="15" readonly></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="copyMailBtn">복사</button>
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     // 전역 변수
     let clientsData = [];     // 전체 클라이언트 데이터
     let sortColumn = 'name';  // 초기 정렬 기준: 고객사
     let sortOrder = 'asc';    // 초기 정렬 방향: 오름차순
+    let deleteMode = false;   // 삭제 모드 상태
+    let selectedClients = []; // 삭제를 위해 선택된 고객사 ID 배열
 
     // 정렬용 아이콘 업데이트 함수
     function updateSortIcons() {
@@ -358,22 +429,79 @@
         // 기본 row
         li.innerHTML = `
           <div class="client-row">
-            <div class="client-col client-name">${client.name}</div>
+            <div class="client-col client-name">
+              ${deleteMode ? `<div class="form-check form-check-inline me-2">
+                <input class="form-check-input client-checkbox" type="checkbox" value="${client.client_id}" id="check-${client.client_id}">
+              </div>` : ''}
+              ${client.name}
+            </div>
             <div class="client-col client-account">${client.account_id}</div>
             <div class="client-col client-owner" data-client-id="${client.client_id}">
               <span class="owner-text ${client.owner ? '' : 'empty'}">
                 ${client.owner || ''}
               </span>
-              <i class="fas fa-pencil-alt edit-owner" title="담당자 수정"></i>
+              ${deleteMode ? '' : `<i class="fas fa-pencil-alt edit-owner" title="담당자 수정"></i>`}
             </div>
             <div class="client-col client-last">${client.last_crawled || 'N/A'}</div>
             <div class="client-col client-events">
-              ${client.events.length
+              ${client.events.length && !deleteMode
                 ? '<button class="btn-event">이벤트 확인</button>'
                 : '-'}
             </div>
           </div>
         `;
+
+        // 담당자 수정 기능
+        const ownerCell = li.querySelector('.client-owner');
+        const cid = ownerCell.dataset.clientId;
+
+        function saveOwner(newOwner) {
+          fetch(`/api/client/${cid}/owner`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ owner: newOwner })
+          })
+          .then(res => {
+            if (!res.ok) throw new Error();
+            client.owner = newOwner;
+            renderClientList();
+          })
+          .catch(() => alert('업데이트 실패'));
+        }
+
+        // 담당자 수정 버튼 클릭 이벤트
+        if (!deleteMode) {
+          const editButton = ownerCell.querySelector('.edit-owner');
+          if (editButton) {
+            editButton.addEventListener('click', function(e) {
+              e.stopPropagation();
+              const currentClient = client; // 클로저를 위한 로컬 변수
+              const currentOwnerCell = this.closest('.client-owner'); // 현재 셀 참조
+              
+              const cur = currentClient.owner || '';
+              currentOwnerCell.innerHTML = `
+                <input type="text" class="owner-input" value="${cur}" placeholder="이름 입력" />
+                <i class="fas fa-check save-owner" title="저장"></i>
+                <i class="fas fa-times cancel-owner" title="취소"></i>
+              `;
+              
+              const input = currentOwnerCell.querySelector('input');
+              input.focus();
+              
+              currentOwnerCell.querySelector('.save-owner').addEventListener('click', function() {
+                saveOwner(input.value.trim());
+              });
+              
+              currentOwnerCell.querySelector('.cancel-owner').addEventListener('click', function() {
+                renderClientList();
+              });
+              
+              input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') saveOwner(input.value.trim());
+              });
+            });
+          }
+        }
 
         // 이벤트 상세
         if (client.events.length > 0) {
@@ -382,22 +510,23 @@
           detailsDiv.innerHTML = `
             <table class="event-table">
               <colgroup>
-                <col style="width:13%;">
-                <col style="width:5%;">
+                <col style="width:12%;">
+                <col style="width:8%;">
                 <col style="width:8%;">
                 <col style="width:8%;">
                 <col style="width:5%;">
                 <col style="width:5%;">
                 <col style="width:7%;">
                 <col style="width:5%;">
-                <col style="width:31%;">
-                <col style="width:13%;">
+                <col style="width:25%;">
+                <col style="width:12%;">
+                <col style="width:5%; min-width:80px;">
               </colgroup>
               <thead>
                 <tr>
                   <th>제목</th><th>서비스</th><th>시작</th><th>종료</th>
                   <th>상태</th><th>리전</th><th>범주</th><th>계정별</th>
-                  <th>설명</th><th>리소스</th>
+                  <th>설명</th><th>리소스</th><th>작업</th>
                 </tr>
               </thead>
               <tbody>
@@ -421,6 +550,9 @@
                           ? '<a href="#" class="read-more">더보기</a>' : ''}
                       </td>
                       <td>${resList}</td>
+                      <td>
+                        <button class="btn-generate-mail" data-event-id="${evt.event_id}">메일 작성</button>
+                      </td>
                     </tr>
                   `;
                 }).join('')}
@@ -431,17 +563,19 @@
 
           // 토글 & 더보기 이벤트
           const btn = li.querySelector('.btn-event');
-          btn.addEventListener('click', e => {
-            e.stopPropagation();
-            detailsDiv.classList.toggle('show');
-            if (detailsDiv.classList.contains('show')) {
-              detailsDiv.style.maxHeight = detailsDiv.scrollHeight + 'px';
-              btn.textContent = '숨기기';
-            } else {
-              detailsDiv.style.maxHeight = '0';
-              btn.textContent = '이벤트 확인';
-            }
-          });
+          if (btn) {
+            btn.addEventListener('click', e => {
+              e.stopPropagation();
+              detailsDiv.classList.toggle('show');
+              if (detailsDiv.classList.contains('show')) {
+                detailsDiv.style.maxHeight = detailsDiv.scrollHeight + 'px';
+                btn.textContent = '숨기기';
+              } else {
+                detailsDiv.style.maxHeight = '0';
+                btn.textContent = '이벤트 확인';
+              }
+            });
+          }
           detailsDiv.querySelectorAll('.read-more').forEach(link => {
             link.addEventListener('click', ev => {
               ev.preventDefault();
@@ -451,61 +585,73 @@
               detailsDiv.style.maxHeight = detailsDiv.scrollHeight + 'px';
             });
           });
+
+          // 메일 작성 버튼 이벤트 핸들러
+          detailsDiv.querySelectorAll('.btn-generate-mail').forEach(button => {
+            button.addEventListener('click', (e) => {
+              e.stopPropagation();
+              const eventId = button.getAttribute('data-event-id');
+              if (!eventId) {
+                alert('유효하지 않은 이벤트 ID입니다.');
+                return;
+              }
+              button.disabled = true;
+              button.textContent = '생성 중...';
+              fetch(`/api/generate-message/${eventId}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+              })
+                .then(response => {
+                  button.disabled = false;
+                  button.textContent = '메일 작성';
+                  if (!response.ok) {
+                    return response.json().then(data => {
+                      throw new Error(data.error || `HTTP error ${response.status}`);
+                    });
+                  }
+                  return response.json();
+                })
+                .then(data => {
+                  if (data.error) {
+                    throw new Error(data.error);
+                  }
+                  if (!data.message) {
+                    throw new Error('메일 내용이 반환되지 않았습니다.');
+                  }
+                  if (typeof bootstrap === 'undefined') {
+                    throw new Error('Bootstrap JavaScript가 로드되지 않았습니다.');
+                  }
+                  const modal = new bootstrap.Modal(document.getElementById('mailModal'));
+                  document.getElementById('mailContent').value = data.message;
+                  modal.show();
+                })
+                .catch(error => {
+                  console.error('메일 생성 오류:', error);
+                  alert(`메일 생성 중 오류가 발생했습니다: ${error.message}`);
+                });
+            });
+          });
         }
 
-        // 담당자 수정 (연필 → 입력창 → 저장/엔터/취소)
-        const ownerCell = li.querySelector('.client-owner');
-        const cid       = ownerCell.dataset.clientId;
 
-        function saveOwner(newOwner) {
-          fetch(`/api/client/${cid}/owner`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ owner: newOwner })
-          })
-          .then(res => {
-            if (!res.ok) throw new Error();
-            client.owner = newOwner;
-            renderClientList();
-          })
-          .catch(() => alert('업데이트 실패'));
-        }
-
-        ownerCell.querySelector('.edit-owner').addEventListener('click', e => {
-          e.stopPropagation();
-          const cur = client.owner || '';
-          ownerCell.innerHTML = `
-            <input type="text" class="owner-input" value="${cur}" placeholder="이름 입력" />
-            <i class="fas fa-check save-owner" title="저장"></i>
-            <i class="fas fa-times cancel-owner" title="취소"></i>
-          `;
-          const input = ownerCell.querySelector('.owner-input');
-          input.focus();
-
-          ownerCell.querySelector('.save-owner').addEventListener('click', () => {
-            saveOwner(input.value.trim());
-          });
-          input.addEventListener('keydown', ev => {
-            if (ev.key === 'Enter') saveOwner(input.value.trim());
-          });
-          ownerCell.querySelector('.cancel-owner').addEventListener('click', () => {
-            renderClientList();
-          });
-        });
 
         listEl.appendChild(li);
       });
 
       updateSortIcons();
+      
+      // 삭제 모드일 경우 체크박스 이벤트 리스너 설정
+      if (deleteMode) {
+        setupCheckboxListeners();
+      }
     }
 
-
-    // 상단 컬럼 클릭 이벤트 (정렬 변경)
+    // 상단 컬럼 클릭 이벤트
     document.querySelectorAll('.sort-item').forEach(item => {
       if (!item.getAttribute('data-column')) return;
-      item.addEventListener('click', function(){
+      item.addEventListener('click', function() {
         const col = this.getAttribute('data-column');
-        if(sortColumn === col) {
+        if (sortColumn === col) {
           sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
         } else {
           sortColumn = col;
@@ -516,16 +662,122 @@
       });
     });
 
-    // 검색 입력 이벤트: 입력할 때마다 리스트 재렌더링
-    document.getElementById('search-input').addEventListener('input', function(){
+    // 검색 입력 이벤트
+    document.getElementById('search-input').addEventListener('input', function() {
       renderClientList();
     });
 
-    // 클라이언트 데이터 fetch 및 초기 렌더링
-    document.addEventListener('DOMContentLoaded', function(){
+    // 삭제 모드 토글 이벤트
+    document.getElementById('delete-toggle-btn').addEventListener('click', function() {
+      deleteMode = !deleteMode;
+      selectedClients = [];
+      
+      // 버튼 상태 업데이트
+      this.classList.toggle('btn-outline-danger');
+      this.classList.toggle('btn-danger');
+      
+      // 삭제 컨트롤 표시/숨김
+      const deleteControls = document.getElementById('delete-controls');
+      if (deleteMode) {
+        deleteControls.classList.remove('d-none');
+        document.getElementById('delete-confirm-btn').disabled = true;
+      } else {
+        deleteControls.classList.add('d-none');
+      }
+      
+      renderClientList();
+    });
+    
+    // 삭제 취소 버튼 이벤트
+    document.getElementById('delete-cancel-btn').addEventListener('click', function() {
+      deleteMode = false;
+      selectedClients = [];
+      document.getElementById('delete-controls').classList.add('d-none');
+      document.getElementById('delete-toggle-btn').classList.add('btn-outline-danger');
+      document.getElementById('delete-toggle-btn').classList.remove('btn-danger');
+      renderClientList();
+    });
+    
+    // 삭제 확인 버튼 이벤트
+    document.getElementById('delete-confirm-btn').addEventListener('click', function() {
+      if (selectedClients.length === 0) return;
+      
+      if (!confirm(`선택한 ${selectedClients.length}개의 고객사를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) {
+        return;
+      }
+      
+      // 삭제 API 호출
+      fetch('/api/clients/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_ids: selectedClients })
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(data => Promise.reject(data.error || '삭제 실패'));
+        }
+        return response.json();
+      })
+      .then(data => {
+        alert(data.message || '삭제가 완료되었습니다.');
+        // 삭제 모드 종료 및 데이터 리로드
+        deleteMode = false;
+        selectedClients = [];
+        document.getElementById('delete-controls').classList.add('d-none');
+        document.getElementById('delete-toggle-btn').classList.add('btn-outline-danger');
+        document.getElementById('delete-toggle-btn').classList.remove('btn-danger');
+        
+        // 데이터 다시 로드
+        return fetch('/api/clients');
+      })
+      .then(response => {
+        if (!response.ok) throw new Error('클라이언트 데이터를 불러오지 못했습니다.');
+        return response.json();
+      })
+      .then(data => {
+        clientsData = data;
+        renderClientList();
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert(`오류가 발생했습니다: ${error}`);
+      });
+    });
+    
+    // 체크박스 이벤트 처리 함수 (renderClientList 내에서 호출됨)
+    function setupCheckboxListeners() {
+      document.querySelectorAll('.client-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          const clientId = parseInt(this.value);
+          if (this.checked) {
+            if (!selectedClients.includes(clientId)) {
+              selectedClients.push(clientId);
+            }
+          } else {
+            selectedClients = selectedClients.filter(id => id !== clientId);
+          }
+          
+          // 삭제 버튼 활성화 상태 업데이트
+          document.getElementById('delete-confirm-btn').disabled = selectedClients.length === 0;
+        });
+        
+        // 선택 상태 복원
+        if (selectedClients.includes(parseInt(checkbox.value))) {
+          checkbox.checked = true;
+        }
+      });
+    }
+
+    // 초기 렌더링
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap JavaScript not loaded');
+        alert('페이지 로드 중 오류가 발생했습니다. 관리자에게 문의하세요.');
+        return;
+      }
       fetch('/api/clients')
         .then(response => {
-          if(!response.ok) throw new Error('클라이언트 데이터를 불러오지 못했습니다.');
+          if (!response.ok) throw new Error('클라이언트 데이터를 불러오지 못했습니다.');
           return response.json();
         })
         .then(data => {
@@ -537,6 +789,21 @@
           console.error('Error:', error);
           document.getElementById('client-list').innerHTML = '<li class="list-group-item">데이터 로드 중 오류 발생</li>';
         });
+
+      // 복사 버튼 이벤트 리스너
+      const copyButton = document.getElementById('copyMailBtn');
+      if (copyButton) {
+        copyButton.addEventListener('click', function() {
+          const textarea = document.getElementById('mailContent');
+          textarea.select();
+          try {
+            document.execCommand('copy');
+            alert('메일 내용이 복사되었습니다.');
+          } catch (err) {
+            alert('복사에 실패했습니다.');
+          }
+        });
+      }
     });
   </script>
 </body>
